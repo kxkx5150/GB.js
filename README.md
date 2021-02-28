@@ -1,4 +1,4 @@
-# GBC.js
+# GB.js
 ### JavaScript Gameboy Emulator  
 
 <br><br>
