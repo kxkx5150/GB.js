@@ -16,5 +16,5 @@ https://github.com/mitxela/swotGB
 
 
 ゲームボーイの側部分  
-animated-gameboy-in-css  
-https://github.com/bchanx/animated-gameboy-in-css
+Pure CSS GameBoy   
+https://github.com/baumannzone/gameboy-css
