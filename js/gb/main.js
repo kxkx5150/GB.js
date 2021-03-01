@@ -19,6 +19,10 @@ var gamepad_instaval = 0;
 const frameClocks = 4194304 / 59.7;
 const frameIntervalMs = 1000 / 59.7;
 
+var filename = "";
+var lazySaveTimerID = null;
+var lazyLoadTimerID = null;
+
 var FirstROMPage;
 var ROMbank = 1;
 var ROMbankoffset = (ROMbank - 1) * 0x4000;
@@ -56,7 +60,10 @@ function readMem(addr) {
 
   if (addr <= 0x3fff) return ROM[addr];
   if (addr <= 0x7fff) return ROM[addr + ROMbankoffset];
-  if (addr >= 0xa000 && addr <= 0xbfff) return cartRAM[addr + RAMbankoffset];
+  if (addr >= 0xa000 && addr <= 0xbfff){
+
+    return cartRAM[addr + RAMbankoffset];
+  }
   if (addr == 0xff00) {
     if (MEM[0xff00] & 0x20) {
       return joypad_dpad & keys_dpad;
@@ -65,6 +72,17 @@ function readMem(addr) {
     } else return 0xff;
   }
   return MEM[addr];
+}
+function storeData(){
+  clearTimeout(lazySaveTimerID)
+  lazySaveTimerID = setTimeout(function(e){
+    let binary = "";
+    for (let i in cartRAM) {
+      binary += String.fromCharCode(cartRAM[i]);
+    }
+    window.localStorage.setItem(filename, binary);
+    console.log("save");
+  },2000)
 }
 function writeMem(addr, data) {
   if (addr >= 0xff10 && addr <= 0xff26) {
@@ -83,6 +101,7 @@ function writeMem(addr, data) {
   }
   if (addr >= 0xa000 && addr <= 0xbfff && RAMenabled) {
     cartRAM[addr + RAMbankoffset] = data;
+    storeData(cartRAM)
     return;
   }
 
@@ -218,7 +237,8 @@ function run(time) {
     window.requestAnimationFrame(run);
   }
 }
-function start(arybuf) {
+function start(arybuf,name) {
+  filename = name;
   ROM = new Uint8Array(arybuf);
   FirstROMPage = ROM.slice(0, 256);
   for (var i = 0; i < 256; i++) ROM[i] = bootCode[i];
@@ -236,7 +256,20 @@ function start(arybuf) {
   (LCD_enabled = false), (LCD_lastmode = 1), (LCD_scan = 0);
   (PC = 0), (SP = 0), (IME = false), (cpu_halted = false);
   requestStop = false;
+
+  loadData();
   run();
+}
+function loadData(){
+  let lbj = localStorage.getItem(filename);
+  if(lbj){
+    let buf = new ArrayBuffer(lbj.length);
+    let bufView = new Uint8Array(buf);
+    for (let i = 0; i < lbj.length; i++) {
+      bufView[i] = lbj.charCodeAt(i);
+    }
+    cartRAM = new Uint8Array(buf);
+  }
 }
 function writeMem16(addr, dataH, dataL) {
   writeMem(addr, dataL);
